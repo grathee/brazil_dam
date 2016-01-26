@@ -1,6 +1,7 @@
 # Import necessary libraries
 library(raster)
 library(rgdal)
+library(bitops)
 
 # Preprocessing functions
 
@@ -18,15 +19,29 @@ crop_image <- function(foldername, bandNames, extent, filename) {
   
   # Listing landsatPath and cloudmaskPath and appending both together. We do not take all the bands
   # because we do not need band 9, 10, 11 and the BQA band.
-  landsatPath <- list.files(folderpath, pattern = glob2rx('LC8*.TIF'), full.names = TRUE)
-  cloudmaskPath <- list.files(folderpath, patter = glob2rx('LC8*cfmask.tif'), full.names = TRUE)
-  totalPath <- append(landsatPath[3:9],cloudmaskPath)
+  landsatPath <- list.files(folderpath, pattern = glob2rx('LC8*.TIF'), full.names = TRUE)[3:11]
   
   # Making the stack and giving them proper names
-  landsat_stack <- stack(totalPath)
+  landsat_stack <- stack(landsatPath)
+  landsat_stack <- dropLayer(landsat_stack, 8)
   names(landsat_stack) <- bandNames
 
   # Crop the image to the desired extent
-  brick = crop(landsat_stack,extent,filename, overwrite=TRUE)
+  brick <- crop(landsat_stack,extent)
   return(brick)
+}
+
+mask_clouds <- function(brick, bandNames, fileName) {
+  print(fileName)
+  cMask <- calc(x=brick$BQA, fun=QA2cloud)
+  stack <- addLayer(brick, cMask)
+  bandNames <- c(bandNames, "cloudMask")
+  names(stack) <- bandNames
+  newBrick <- brick(stack, filename=fileName, overwrite=TRUE)
+  return(newBrick)
+}
+
+QA2cloud <- function(x, bitpos=0xC000) {
+  cloud <- ifelse(bitAnd(x, bitpos) == bitpos, 1, 0)
+  return(cloud)
 }

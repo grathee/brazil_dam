@@ -1,6 +1,18 @@
 # Necessary imports
 library(raster)
 
+# Create data, output and bricks folder if they do not exist yet. The data folder can be filled up with
+# the necessary landsat images by use of the python script: Brazil_dam_breach.py.
+mainDir <- '/home/eline/Documents/University/GeoScripting/BrazilDam'
+dataDir <- 'data'
+bricksDir <- 'data/bricks'
+outputDir <- 'output'
+dirList <- list(dataDir, bricksDir, outputDir)
+
+for (dir in dirList) {
+  dir.create(file.path(mainDir, dir), showWarnings = FALSE)
+}
+
 # Source necessary R scripts
 source('R/preprocessing.R')
 
@@ -9,12 +21,15 @@ ext_sea <- extent(338265,444828,-2219221,-2123875)
 ext_river <- extent(204819, 392250, -2177909, -2078672)
 ext_br <- extent(635305, 780405, -2259121,-2138545)
 ext_br_zoom <- extent(648078,731153,-2258406,-2221620)
-band_names <- c("band1", "band2", "band3", "band4", "band5", "band6" ,"band7", "fmask")
+band_names <- c("band1", "band2", "band3", "band4", "band5", "band6" ,"band7", "BQA")
 
 ### Sea Before ###
-sea_b <- crop_image('LC82150742015254LGN00_sea_before', band_names, ext_sea, "data/bricks/sea_b.grd")
+#filename = "data/bricks/sea_b.grd"
+sea_b <- crop_image('LC82150742015254LGN00_sea_before', band_names, ext_sea)
+#mask_clouds(sea_b, band_names, filename)
 ### Sea After ###
-sea_a <- crop_image('LC82150742015334LGN00_sea_after', band_names, ext_sea, "data/bricks/sea_a.grd")
+#filename = "data/bricks/sea_a.grd"
+sea_a <- crop_image('LC82150742015334LGN00_sea_after', band_names, ext_sea)
 ### River Before ###
 river_b <- crop_image('LC82160732015277LGN00_river_before', band_names, ext_river, "data/bricks/river_b.grd")
 ### River After
@@ -27,3 +42,19 @@ br_a <- crop_image('LC82170742015316LGN00_br_after',band_names, ext_br, "data/br
 br_b_zoom <- crop_image('LC82170742015284LGN00_br_before', band_names, ext_br_zoom, "data/bricks/br_b_zoom.grd")
 ### Bento Rodrigues Zoom After ###
 br_a_zoom <- crop_image('LC82170742015316LGN00_br_after', band_names, ext_br_zoom, "data/bricks/br_a_zoom.grd")
+
+brickList <- list(sea_b,sea_a,river_b,river_a,br_b,br_a,br_b_zoom,br_a_zoom)
+filenameList <- list("sea_b.grd","sea_a.grd","river_b.grd","river_a.grd","br_b.grd","br_a.grd","br_b_zoom.grd","br_a_zoom.grd")
+
+for (i in 1:length(brickList)) {
+  filename <- file.path(bricksDir,filenameList[i])
+  mask_clouds(brickList[[i]], band_names, filename)
+}
+
+# Load all bricks including cloud mask and plot
+for (i in 1:length(brickList)) {
+  filename <- file.path(bricksDir,filenameList[i])
+  brickList[[1]] <- brick(filename)
+  names(brickList[[1]])
+  plot(brickList[[1]]$cloudMask)
+}
