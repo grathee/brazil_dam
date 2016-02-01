@@ -3,7 +3,7 @@ library(raster)
 
 # Create data, output and bricks folder if they do not exist yet. The data folder can be filled up with
 # the necessary landsat images by use of the python script: Brazil_dam_breach.py.
-mainDir <- '/home/eline/Documents/University/GeoScripting/BrazilDam'
+mainDir <- '/home/user/Documents/University/GeoScripting/BrazilDam'
 dataDir <- 'data'
 bricksDir <- 'data/bricks'
 outputDir <- 'output'
